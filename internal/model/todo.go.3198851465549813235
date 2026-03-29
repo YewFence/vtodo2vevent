@@ -1,0 +1,39 @@
+package model
+
+import "time"
+
+type Todo struct {
+	Path        string
+	ETag        string
+	UID         string
+	Summary     string
+	Description string
+	Status      string
+	Completed   bool
+	StartAt     *time.Time
+	StartHasTime bool
+	DueAt       *time.Time
+	DueHasTime  bool
+	Raw         string
+}
+
+func (t Todo) HasTimedDue() bool {
+	return t.DueAt != nil && t.DueHasTime
+}
+
+func (t Todo) HasTimeRange() bool {
+	return t.StartAt != nil && t.DueAt != nil && t.StartHasTime && t.DueHasTime
+}
+
+func (t Todo) ShouldProject() bool {
+	if t.Completed {
+		return false
+	}
+	if t.HasTimeRange() {
+		return true
+	}
+	if t.HasTimedDue() {
+		return true
+	}
+	return false
+}

@@ -1,0 +1,12 @@
+server:
+  base_url: "https://example.com/dav.php"
+  username: "user"
+  password: "pass"
+  todo_collection: "/cal.php/calendars/user/tasks/"
+  event_collection: "/cal.php/calendars/user/task-reminders/"
+
+sync:
+  timezone: "Asia/Shanghai"
+  due_only_duration_minutes: 5
+  alarm_minutes_before: 10
+  dry_run: false
