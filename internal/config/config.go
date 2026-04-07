@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -26,6 +27,7 @@ type SyncConfig struct {
 	DueOnlyDurationMinutes int    `yaml:"due_only_duration_minutes"`
 	AlarmMinutesBefore     int    `yaml:"alarm_minutes_before"`
 	DryRun                 bool   `yaml:"dry_run"`
+	PollInterval           string `yaml:"poll_interval"`
 }
 
 func Load(path string) (Config, error) {
@@ -74,5 +76,27 @@ func (c *Config) Validate() error {
 	if c.Sync.AlarmMinutesBefore < 0 {
 		return fmt.Errorf("sync.alarm_minutes_before must be >= 0")
 	}
+	if intervalText := strings.TrimSpace(c.Sync.PollInterval); intervalText != "" {
+		interval, err := time.ParseDuration(intervalText)
+		if err != nil {
+			return fmt.Errorf("sync.poll_interval is invalid: %w", err)
+		}
+		if interval <= 0 {
+			return fmt.Errorf("sync.poll_interval must be > 0")
+		}
+		c.Sync.PollInterval = interval.String()
+	}
 	return nil
+}
+
+func (s SyncConfig) PollIntervalDuration() time.Duration {
+	if strings.TrimSpace(s.PollInterval) == "" {
+		return 0
+	}
+
+	interval, err := time.ParseDuration(s.PollInterval)
+	if err != nil {
+		return 0
+	}
+	return interval
 }

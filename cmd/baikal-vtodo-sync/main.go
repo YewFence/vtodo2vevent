@@ -5,6 +5,8 @@ import (
 	"flag"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"baikal-vtodo-sync/internal/caldav"
@@ -31,11 +33,18 @@ func main() {
 
 	client := caldav.NewClient(cfg.Server.BaseURL, cfg.Server.Username, cfg.Server.Password, location)
 	reconciler := syncer.NewReconciler(client, cfg)
+	service := syncer.NewService(reconciler, cfg.Sync.PollIntervalDuration())
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	if err := reconciler.Run(context.Background()); err != nil {
-		log.Printf("sync failed: %v", err)
+	if err := service.Run(ctx); err != nil {
+		log.Printf("sync service failed: %v", err)
 		os.Exit(1)
 	}
 
+	if cfg.Sync.PollIntervalDuration() > 0 {
+		log.Printf("sync service stopped")
+		return
+	}
 	log.Printf("sync completed")
 }

@@ -10,3 +10,4 @@ sync:
   due_only_duration_minutes: 5
   alarm_minutes_before: 10
   dry_run: false
+  poll_interval: "1m"

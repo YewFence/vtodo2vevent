@@ -2,39 +2,42 @@
 
 一个用 Go 编写的 Baikal CalDAV 同步工具，用来把带明确时间信息的 `VTODO` 单向投影成目标日历中的 `VEVENT`，并附带提醒。
 
-## 当前状态
-
-当前版本已经完成：
-
-- 项目骨架
-- YAML 配置加载与校验
-- 内部 todo / event 模型
-- `VTODO -> VEVENT` 投影规则
-- `REPORT calendar-query` 请求发送
-- CalDAV 多状态 XML 解析
-- 基于 ICS 文本的最小字段提取
-- reconcile 创建 / 更新 / 删除主流程
-- VEVENT 与 VALARM 生成
-- 可通过 `go build ./...` 成功构建
-
-当前版本的限制：
-
-- ICS 解析目前是首版最小实现，只覆盖本项目需要的字段
-- 暂未处理带 `TZID` 参数的日期时间
-- 暂未处理 recurrence、子任务、复杂 VTODO 属性
-- 暂未加入自动化测试
-
-也就是说，现在已经不是纯骨架了，已经具备首版可运行主流程；下一步最适合接入真实 Baikal 账户做联调和修正兼容性细节。
-
 ## 运行方式
 
 ```bash
 go run ./cmd/baikal-vtodo-sync -config config.yaml
 ```
 
+如果 `config.yaml` 里没有配置 `sync.poll_interval`，程序会执行一次同步后退出。
+
+如果配置了 `sync.poll_interval`，程序会常驻运行，启动后立即同步一次，然后按轮询间隔持续同步。
+
 ## 配置示例
 
 参考：`config.example.yaml`
+
+新增的持续运行配置：
+
+```yaml
+sync:
+  poll_interval: "1m"
+```
+
+把它留空或删除，就会退回单次执行模式。
+
+## Compose Sidecar
+
+仓库已经附带 `compose.yaml` 和 `Dockerfile`，可以直接作为 sidecar 服务运行：
+
+```bash
+docker compose up -d --build
+```
+
+运行前准备：
+
+- 复制 `config.example.yaml` 为 `config.yaml`
+- 把 `config.yaml` 里的服务地址、账号和集合路径改成你自己的
+- 保留 `sync.poll_interval`，这样容器会持续同步而不是跑完就退出
 
 ## 设计说明
 

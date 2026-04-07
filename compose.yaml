@@ -1,0 +1,11 @@
+services:
+  baikal-vtodo-sync:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command:
+      - -config
+      - /config/config.yaml
+    volumes:
+      - ./config.yaml:/config/config.yaml:ro
