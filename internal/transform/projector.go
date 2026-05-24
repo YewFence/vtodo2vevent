@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"baikal-vtodo-sync/internal/model"
+	"vtodo2vevent/internal/model"
 )
 
 type ProjectOptions struct {

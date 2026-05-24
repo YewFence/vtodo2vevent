@@ -1,4 +1,4 @@
-module baikal-vtodo-sync
+module vtodo2vevent
 
 go 1.25.0
 

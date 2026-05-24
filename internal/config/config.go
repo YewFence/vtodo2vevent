@@ -10,15 +10,24 @@ import (
 )
 
 type Config struct {
-	Server ServerConfig `yaml:"server"`
+	Source SourceConfig `yaml:"source"`
+	Target TargetConfig `yaml:"target"`
 	Sync   SyncConfig   `yaml:"sync"`
 }
 
-type ServerConfig struct {
+type SourceConfig struct {
+	Type           string `yaml:"type"`
+	BaseURL        string `yaml:"base_url"`
+	Username       string `yaml:"username"`
+	Password       string `yaml:"password"`
+	TodoCollection string `yaml:"todo_collection"`
+}
+
+type TargetConfig struct {
+	Type            string `yaml:"type"`
 	BaseURL         string `yaml:"base_url"`
 	Username        string `yaml:"username"`
 	Password        string `yaml:"password"`
-	TodoCollection  string `yaml:"todo_collection"`
 	EventCollection string `yaml:"event_collection"`
 }
 
@@ -49,20 +58,11 @@ func Load(path string) (Config, error) {
 }
 
 func (c *Config) Validate() error {
-	if c.Server.BaseURL == "" {
-		return fmt.Errorf("server.base_url is required")
+	if err := c.Source.validate(); err != nil {
+		return err
 	}
-	if c.Server.Username == "" {
-		return fmt.Errorf("server.username is required")
-	}
-	if c.Server.Password == "" {
-		return fmt.Errorf("server.password is required")
-	}
-	if c.Server.TodoCollection == "" {
-		return fmt.Errorf("server.todo_collection is required")
-	}
-	if c.Server.EventCollection == "" {
-		return fmt.Errorf("server.event_collection is required")
+	if err := c.Target.validate(); err != nil {
+		return err
 	}
 	if c.Sync.Timezone == "" {
 		c.Sync.Timezone = "UTC"
@@ -85,6 +85,50 @@ func (c *Config) Validate() error {
 			return fmt.Errorf("sync.poll_interval must be > 0")
 		}
 		c.Sync.PollInterval = interval.String()
+	}
+	return nil
+}
+
+func (s *SourceConfig) validate() error {
+	if s.Type == "" {
+		s.Type = "caldav"
+	}
+	if s.Type != "caldav" {
+		return fmt.Errorf("source.type must be caldav")
+	}
+	if s.BaseURL == "" {
+		return fmt.Errorf("source.base_url is required")
+	}
+	if s.Username == "" {
+		return fmt.Errorf("source.username is required")
+	}
+	if s.Password == "" {
+		return fmt.Errorf("source.password is required")
+	}
+	if s.TodoCollection == "" {
+		return fmt.Errorf("source.todo_collection is required")
+	}
+	return nil
+}
+
+func (t *TargetConfig) validate() error {
+	if t.Type == "" {
+		t.Type = "caldav"
+	}
+	if t.Type != "caldav" {
+		return fmt.Errorf("target.type must be caldav")
+	}
+	if t.BaseURL == "" {
+		return fmt.Errorf("target.base_url is required")
+	}
+	if t.Username == "" {
+		return fmt.Errorf("target.username is required")
+	}
+	if t.Password == "" {
+		return fmt.Errorf("target.password is required")
+	}
+	if t.EventCollection == "" {
+		return fmt.Errorf("target.event_collection is required")
 	}
 	return nil
 }

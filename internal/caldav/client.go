@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"baikal-vtodo-sync/internal/ics"
-	"baikal-vtodo-sync/internal/model"
+	"vtodo2vevent/internal/ics"
+	"vtodo2vevent/internal/model"
 )
 
 type Client struct {
@@ -473,7 +473,7 @@ func buildEventICS(event model.Event, alarmMinutesBefore int) string {
 	var b strings.Builder
 	b.WriteString("BEGIN:VCALENDAR\r\n")
 	b.WriteString("VERSION:2.0\r\n")
-	b.WriteString("PRODID:-//baikal-vtodo-sync//EN\r\n")
+	b.WriteString("PRODID:-//vtodo2vevent//EN\r\n")
 	b.WriteString("BEGIN:VEVENT\r\n")
 	b.WriteString("UID:" + event.UID + "\r\n")
 	b.WriteString("DTSTAMP:" + dtstamp + "\r\n")

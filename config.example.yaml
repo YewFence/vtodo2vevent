@@ -1,9 +1,16 @@
-server:
-  base_url: "https://example.com/dav.php"
+source:
+  type: "caldav"
+  base_url: "https://vikunja.example.com"
+  username: "user"
+  password: "tk_xxx"
+  todo_collection: "/dav/projects/12"
+
+target:
+  type: "caldav"
+  base_url: "https://radicale.example.com"
   username: "user"
   password: "pass"
-  todo_collection: "/cal.php/calendars/user/tasks/"
-  event_collection: "/cal.php/calendars/user/task-reminders/"
+  event_collection: "/user/task-reminders/"
 
 sync:
   timezone: "Asia/Shanghai"

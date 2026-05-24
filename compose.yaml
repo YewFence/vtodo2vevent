@@ -1,5 +1,5 @@
 services:
-  baikal-vtodo-sync:
+  vtodo2vevent:
     build:
       context: .
       dockerfile: Dockerfile

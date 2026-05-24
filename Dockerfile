@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS build
+FROM golang:1.25-alpine AS build
 
 WORKDIR /src
 
@@ -6,7 +6,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/baikal-vtodo-sync ./cmd/baikal-vtodo-sync
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/vtodo2vevent ./cmd/vtodo2vevent
 
 FROM alpine:3.21
 
@@ -16,10 +16,10 @@ RUN apk add --no-cache ca-certificates tzdata && \
 
 WORKDIR /app
 
-COPY --from=build /out/baikal-vtodo-sync /usr/local/bin/baikal-vtodo-sync
+COPY --from=build /out/vtodo2vevent /usr/local/bin/vtodo2vevent
 COPY config.example.yaml /app/config.example.yaml
 
 USER app
 
-ENTRYPOINT ["baikal-vtodo-sync"]
+ENTRYPOINT ["vtodo2vevent"]
 CMD ["-config", "/config/config.yaml"]

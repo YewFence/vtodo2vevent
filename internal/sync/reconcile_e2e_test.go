@@ -12,12 +12,12 @@ import (
 	"testing"
 	"time"
 
-	"baikal-vtodo-sync/internal/caldav"
-	"baikal-vtodo-sync/internal/config"
-	"baikal-vtodo-sync/internal/model"
-	syncer "baikal-vtodo-sync/internal/sync"
 	testcontainers "github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"vtodo2vevent/internal/caldav"
+	"vtodo2vevent/internal/config"
+	"vtodo2vevent/internal/model"
+	syncer "vtodo2vevent/internal/sync"
 )
 
 const (
@@ -43,13 +43,21 @@ func TestReconciler_RunE2EWithRadicale(t *testing.T) {
 	createCalendarCollection(t, ctx, baseURL, todoCollection, "Tasks", "VTODO")
 	createCalendarCollection(t, ctx, baseURL, eventCollection, "Task Reminders", "VEVENT")
 
-	client := caldav.NewClient(baseURL, testUsername, testPassword, time.UTC)
-	reconciler := syncer.NewReconciler(client, config.Config{
-		Server: config.ServerConfig{
+	sourceClient := caldav.NewClient(baseURL, testUsername, testPassword, time.UTC)
+	targetClient := caldav.NewClient(baseURL, testUsername, testPassword, time.UTC)
+	reconciler := syncer.NewReconciler(sourceClient, targetClient, config.Config{
+		Source: config.SourceConfig{
+			Type:           "caldav",
+			BaseURL:        baseURL,
+			Username:       testUsername,
+			Password:       testPassword,
+			TodoCollection: todoCollection,
+		},
+		Target: config.TargetConfig{
+			Type:            "caldav",
 			BaseURL:         baseURL,
 			Username:        testUsername,
 			Password:        testPassword,
-			TodoCollection:  todoCollection,
 			EventCollection: eventCollection,
 		},
 		Sync: config.SyncConfig{
@@ -73,7 +81,7 @@ func TestReconciler_RunE2EWithRadicale(t *testing.T) {
 	runReconcile(t, ctx, reconciler)
 	runReconcile(t, ctx, reconciler)
 
-	events := listProjectedEvents(t, ctx, client, eventCollection)
+	events := listProjectedEvents(t, ctx, targetClient, eventCollection)
 	if len(events) != 1 {
 		t.Fatalf("expected 1 projected event after initial sync, got %d", len(events))
 	}
@@ -108,7 +116,7 @@ func TestReconciler_RunE2EWithRadicale(t *testing.T) {
 
 	runReconcile(t, ctx, reconciler)
 
-	events = listProjectedEvents(t, ctx, client, eventCollection)
+	events = listProjectedEvents(t, ctx, targetClient, eventCollection)
 	if len(events) != 1 {
 		t.Fatalf("expected 1 projected event after update, got %d", len(events))
 	}
@@ -138,7 +146,7 @@ func TestReconciler_RunE2EWithRadicale(t *testing.T) {
 
 	runReconcile(t, ctx, reconciler)
 
-	events = listProjectedEvents(t, ctx, client, eventCollection)
+	events = listProjectedEvents(t, ctx, targetClient, eventCollection)
 	if len(events) != 0 {
 		t.Fatalf("expected projected event to be deleted after todo completion, got %d event(s)", len(events))
 	}
@@ -331,7 +339,7 @@ func buildTodoICS(todo todoFixture) string {
 	var b strings.Builder
 	b.WriteString("BEGIN:VCALENDAR\r\n")
 	b.WriteString("VERSION:2.0\r\n")
-	b.WriteString("PRODID:-//baikal-vtodo-sync-e2e//EN\r\n")
+	b.WriteString("PRODID:-//vtodo2vevent-e2e//EN\r\n")
 	b.WriteString("BEGIN:VTODO\r\n")
 	b.WriteString("UID:" + todo.UID + "\r\n")
 	b.WriteString("DTSTAMP:20260408T000000Z\r\n")

@@ -7,28 +7,33 @@ import (
 	"strings"
 	"time"
 
-	"baikal-vtodo-sync/internal/caldav"
-	"baikal-vtodo-sync/internal/config"
-	"baikal-vtodo-sync/internal/model"
-	"baikal-vtodo-sync/internal/transform"
+	"vtodo2vevent/internal/caldav"
+	"vtodo2vevent/internal/config"
+	"vtodo2vevent/internal/model"
+	"vtodo2vevent/internal/transform"
 )
 
 type Reconciler struct {
-	client *caldav.Client
-	cfg    config.Config
+	sourceClient *caldav.Client
+	targetClient *caldav.Client
+	cfg          config.Config
 }
 
-func NewReconciler(client *caldav.Client, cfg config.Config) *Reconciler {
-	return &Reconciler{client: client, cfg: cfg}
+func NewReconciler(sourceClient, targetClient *caldav.Client, cfg config.Config) *Reconciler {
+	return &Reconciler{
+		sourceClient: sourceClient,
+		targetClient: targetClient,
+		cfg:          cfg,
+	}
 }
 
 func (r *Reconciler) Run(ctx context.Context) error {
-	todos, err := r.client.ListTodos(ctx, r.cfg.Server.TodoCollection)
+	todos, err := r.sourceClient.ListTodos(ctx, r.cfg.Source.TodoCollection)
 	if err != nil {
 		return fmt.Errorf("list todos: %w", err)
 	}
 
-	events, err := r.client.ListProjectedEvents(ctx, r.cfg.Server.EventCollection)
+	events, err := r.targetClient.ListProjectedEvents(ctx, r.cfg.Target.EventCollection)
 	if err != nil {
 		return fmt.Errorf("list projected events: %w", err)
 	}
@@ -89,7 +94,7 @@ func (r *Reconciler) createEvent(ctx context.Context, event model.Event) error {
 		log.Printf("[dry-run] create event uid=%s summary=%q", event.UID, event.Summary)
 		return nil
 	}
-	return r.client.PutEvent(ctx, r.cfg.Server.EventCollection, event, r.cfg.Sync.AlarmMinutesBefore)
+	return r.targetClient.PutEvent(ctx, r.cfg.Target.EventCollection, event, r.cfg.Sync.AlarmMinutesBefore)
 }
 
 func (r *Reconciler) updateEvent(ctx context.Context, event model.Event) error {
@@ -97,7 +102,7 @@ func (r *Reconciler) updateEvent(ctx context.Context, event model.Event) error {
 		log.Printf("[dry-run] update event uid=%s summary=%q", event.UID, event.Summary)
 		return nil
 	}
-	return r.client.PutEvent(ctx, r.cfg.Server.EventCollection, event, r.cfg.Sync.AlarmMinutesBefore)
+	return r.targetClient.PutEvent(ctx, r.cfg.Target.EventCollection, event, r.cfg.Sync.AlarmMinutesBefore)
 }
 
 func (r *Reconciler) deleteEvent(ctx context.Context, event model.Event) error {
@@ -108,7 +113,7 @@ func (r *Reconciler) deleteEvent(ctx context.Context, event model.Event) error {
 	if strings.TrimSpace(event.Path) == "" {
 		return fmt.Errorf("cannot delete event %s without path", event.UID)
 	}
-	return r.client.DeleteEvent(ctx, event.Path)
+	return r.targetClient.DeleteEvent(ctx, event.Path)
 }
 
 func eventsEqual(a, b model.Event) bool {
