@@ -1,34 +1,10 @@
-# Binaries
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test binary
+/dist/
+/bin/
+/coverage.out
 *.test
 
-# Output of go coverage
-*.out
-
-# Go workspace
-go.work
-go.work.sum
-
-# Build output
-/bin/
-/dist/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Config (keep example)
+.env
+.env.local
 config.yaml
+
+mise.local.toml

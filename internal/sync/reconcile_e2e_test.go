@@ -250,8 +250,17 @@ func warmUpAuthenticatedRoot(t *testing.T, ctx context.Context, baseURL string) 
 
 		resp, err := http.DefaultClient.Do(req)
 		if err == nil {
-			io.Copy(io.Discard, resp.Body)
-			resp.Body.Close()
+			if _, err := io.Copy(io.Discard, resp.Body); err != nil {
+				lastErr = fmt.Errorf("read warm-up response body: %w", err)
+				_ = resp.Body.Close()
+				time.Sleep(250 * time.Millisecond)
+				continue
+			}
+			if err := resp.Body.Close(); err != nil {
+				lastErr = fmt.Errorf("close warm-up response body: %w", err)
+				time.Sleep(250 * time.Millisecond)
+				continue
+			}
 			if resp.StatusCode >= 200 && resp.StatusCode < 400 {
 				return
 			}
@@ -292,9 +301,15 @@ func createCalendarCollection(t *testing.T, ctx context.Context, baseURL, collec
 	if err != nil {
 		t.Fatalf("create calendar collection %s: %v", collectionPath, err)
 	}
-	defer resp.Body.Close()
 
-	responseBody, _ := io.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		_ = resp.Body.Close()
+		t.Fatalf("read create calendar collection response: %v", err)
+	}
+	if err := resp.Body.Close(); err != nil {
+		t.Fatalf("close create calendar collection response: %v", err)
+	}
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusMethodNotAllowed {
 		t.Fatalf("create calendar collection %s unexpected status: %s body=%s", collectionPath, resp.Status, string(responseBody))
 	}
@@ -314,9 +329,15 @@ func putCalendarObject(t *testing.T, ctx context.Context, baseURL, objectPath, r
 	if err != nil {
 		t.Fatalf("put calendar object %s: %v", objectPath, err)
 	}
-	defer resp.Body.Close()
 
-	responseBody, _ := io.ReadAll(resp.Body)
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		_ = resp.Body.Close()
+		t.Fatalf("read put calendar object response: %v", err)
+	}
+	if err := resp.Body.Close(); err != nil {
+		t.Fatalf("close put calendar object response: %v", err)
+	}
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("put calendar object %s unexpected status: %s body=%s", objectPath, resp.Status, string(responseBody))
 	}

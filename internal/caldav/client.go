@@ -108,8 +108,12 @@ func (c *Client) DeleteEvent(ctx context.Context, eventPath string) error {
 	if err != nil {
 		return fmt.Errorf("delete event: %w", err)
 	}
-	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	if _, err := io.Copy(io.Discard, resp.Body); err != nil {
+		return fmt.Errorf("read delete event response body: %w", err)
+	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
 		return fmt.Errorf("delete event unexpected status: %s", resp.Status)
@@ -129,8 +133,12 @@ func (c *Client) putICS(ctx context.Context, resourcePath string, body string) e
 	if err != nil {
 		return fmt.Errorf("put event: %w", err)
 	}
-	defer resp.Body.Close()
-	io.Copy(io.Discard, resp.Body)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	if _, err := io.Copy(io.Discard, resp.Body); err != nil {
+		return fmt.Errorf("read put event response body: %w", err)
+	}
 
 	if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("put event unexpected status: %s", resp.Status)
@@ -166,7 +174,9 @@ func (c *Client) calendarQuery(ctx context.Context, collectionPath string, body 
 	if err != nil {
 		return nil, fmt.Errorf("calendar-query request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusMultiStatus {
 		bodyBytes, _ := io.ReadAll(resp.Body)
